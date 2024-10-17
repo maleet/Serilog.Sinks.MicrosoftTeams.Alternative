@@ -9,6 +9,8 @@
 
 namespace Serilog.Sinks.MicrosoftTeams.Alternative;
 
+using AdaptiveCards;
+
 /// <summary>
 /// Implements <see cref="IBatchedLogEventSink"/> and provides means needed for sending Serilog log events to Microsoft Teams.
 /// </summary>
@@ -254,14 +256,16 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
             Title = this.GetRenderedTitle(logEvent),
             Text = this.options.UseCodeTagsForMessage ? $"```{Environment.NewLine}{renderedMessage}{Environment.NewLine}```" : renderedMessage,
             Color = GetAttachmentColor(logEvent.LogEvent.Level),
-            Sections = this.options.OmitPropertiesSection ? new List<MicrosoftTeamsMessageSection>() : new[]
-            {
-                new MicrosoftTeamsMessageSection
+            Sections = this.options.OmitPropertiesSection
+                ? new List<MicrosoftTeamsMessageSection>()
+                : new[]
                 {
-                    Title = "Properties",
-                    Facts = this.GetFacts(logEvent).ToArray()
-                }
-            },
+                    new MicrosoftTeamsMessageSection
+                    {
+                        Title = "Properties",
+                        Facts = this.GetFacts(logEvent).ToArray()
+                    }
+                },
             PotentialActions = new List<MicrosoftTeamsMessageAction>()
         };
 
@@ -287,6 +291,16 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
 
         var message = new MicrosoftTeamsMessage();
 
+        var additionalProperty = new SerializableDictionary<string, object>
+        {
+            {
+                "msteams", new
+                {
+                    width = "Full",
+                }
+            }
+        };
+
         var card = new AdaptiveCards.AdaptiveCard(new AdaptiveCards.AdaptiveSchemaVersion(1, 0))
         {
             Body = new List<AdaptiveCards.AdaptiveElement>
@@ -294,7 +308,7 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
                 new AdaptiveCards.AdaptiveTextBlock
                 {
                     Text = this.GetRenderedTitle(logEvent),
-                    Size = AdaptiveCards.AdaptiveTextSize.Medium,
+                    Size = AdaptiveCards.AdaptiveTextSize.ExtraLarge,
                     Weight = AdaptiveCards.AdaptiveTextWeight.Bolder,
                     Style = AdaptiveCards.AdaptiveTextBlockStyle.Heading
                 },
@@ -305,7 +319,8 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
                     Color = GetCardColor(logEvent.LogEvent.Level)
                 }
             },
-            Actions = new List<AdaptiveCards.AdaptiveAction>()
+            Actions = new List<AdaptiveCards.AdaptiveAction>(),
+            AdditionalProperties = additionalProperty
         };
 
         message.Attachments.Add(new MicrosoftTeamsAttachment()
