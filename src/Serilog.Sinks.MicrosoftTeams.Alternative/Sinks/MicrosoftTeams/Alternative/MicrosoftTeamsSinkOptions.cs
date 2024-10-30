@@ -49,6 +49,7 @@ public class MicrosoftTeamsSinkOptions
     /// <param name="failureCallback">The failure callback.</param>
     /// <param name="queueLimit">The maximum number of events that should be stored in the batching queue.</param>
     /// <param name="channelHandler">The configuration for sending events to multiple channels.</param>
+    /// <param name="propertiesInSection">Visible properties in the properties section.</param>
     public MicrosoftTeamsSinkOptions(
         string webHookUri,
         string? titleTemplate = null,
@@ -64,7 +65,8 @@ public class MicrosoftTeamsSinkOptions
         IEnumerable<MicrosoftTeamsSinkOptionsButton>? buttons = null,
         Action<Exception>? failureCallback = null,
         int? queueLimit = null,
-        MicrosoftTeamsSinkChannelHandlerOptions? channelHandler = null)
+        MicrosoftTeamsSinkChannelHandlerOptions? channelHandler = null,
+        List<string>? propertiesInSection = null)
     {
         if (string.IsNullOrWhiteSpace(webHookUri))
         {
@@ -86,7 +88,13 @@ public class MicrosoftTeamsSinkOptions
         this.FailureCallback = failureCallback;
         this.QueueLimit = queueLimit ?? DefaultQueueLimit;
         this.ChannelHandler = channelHandler ?? new MicrosoftTeamsSinkChannelHandlerOptions();
+        this.PropertiesSection = propertiesInSection ?? new List<string>();
     }
+
+    /// <summary>
+    /// Visible properties in the properties section.
+    /// </summary>
+    public List<string> PropertiesSection { get; set; }
 
     /// <summary>
     /// Gets the incoming web hook URI to the Microsoft Teams channel.

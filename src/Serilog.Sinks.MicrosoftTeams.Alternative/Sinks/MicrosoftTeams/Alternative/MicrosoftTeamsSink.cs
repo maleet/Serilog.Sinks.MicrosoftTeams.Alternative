@@ -9,6 +9,12 @@
 
 namespace Serilog.Sinks.MicrosoftTeams.Alternative;
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using AdaptiveCards;
 
 /// <summary>
@@ -330,9 +336,16 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
 
         if (!this.options.OmitPropertiesSection)
         {
+            var microsoftTeamsMessageFacts = this.GetFacts(logEvent);
+
+            if (this.options.PropertiesSection.Any())
+            {
+                microsoftTeamsMessageFacts = microsoftTeamsMessageFacts.Where(fact => this.options.PropertiesSection.Contains(fact.Name)).ToList();
+            }
+            
             card.Body.Add(new AdaptiveCards.AdaptiveFactSet
             {
-                Facts = this.GetFacts(logEvent).Select(f => new AdaptiveCards.AdaptiveFact(f.Name, f.Value)).ToList()
+                Facts = microsoftTeamsMessageFacts.Select(f => new AdaptiveCards.AdaptiveFact(f.Name, f.Value)).ToList()
             });
         }
 
