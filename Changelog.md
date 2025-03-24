@@ -1,6 +1,6 @@
 Change history
 --------------
-
+* **Version 1.4.11 (2025-03-24)**: Toggle visiblity
 * **Version 1.4.7.0 (2024-06-04)**: Updated NuGet packages, fixes https://github.com/serilog-contrib/Serilog.Sinks.MicrosoftTeams.Alternative/issues/32.
 * **Version 1.4.6.0 (2024-05-16)**: Removed support for Net7.0.
 * **Version 1.4.5.0 (2024-04-22)**: Updated NuGet packages, fixes https://github.com/serilog-contrib/Serilog.Sinks.MicrosoftTeams.Alternative/issues/31.
