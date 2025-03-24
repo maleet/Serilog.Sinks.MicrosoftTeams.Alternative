@@ -296,7 +296,7 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
         var message = new MicrosoftTeamsMessage();
         
         var renderedMessage = this.GetRenderedMessage(logEvent);
-        var shortMessage = renderedMessage[..(renderedMessage.Length >= 150 ? 150 : renderedMessage.Length)];
+        var shortMessage = renderedMessage[..(renderedMessage.Length >= 200 ? 200 : renderedMessage.Length)];
 
         var card = new AdaptiveCard(new AdaptiveSchemaVersion(1, 0))
         {
@@ -321,6 +321,7 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
                     Id = "longMessage",
                     Text = this.options.UseCodeTagsForMessage ? $"```{Environment.NewLine}{renderedMessage}{Environment.NewLine}```" : renderedMessage,
                     Wrap = true,
+                    IsVisible = false,
                     Color = GetCardColor(logEvent.LogEvent.Level)
                 }
             ],
@@ -354,6 +355,7 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
             card.Body.Add(new AdaptiveFactSet
             {
                 Id = "Facts",
+                IsVisible = false,
                 Facts = microsoftTeamsMessageFacts.Select(f => new AdaptiveFact(f.Name, f.Value)).ToList()
             });
         }
