@@ -111,14 +111,14 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
     /// </summary>
     /// <param name="level">The level.</param>
     /// <returns>The attachment color as <see cref="AdaptiveCards.AdaptiveTextColor"/>.</returns>
-    private static AdaptiveCards.AdaptiveTextColor GetCardColor(LogEventLevel level)
+    private static AdaptiveTextColor GetCardColor(LogEventLevel level)
     {
         return level switch
         {
-            LogEventLevel.Information => AdaptiveCards.AdaptiveTextColor.Default,
-            LogEventLevel.Warning => AdaptiveCards.AdaptiveTextColor.Warning,
-            LogEventLevel.Error or LogEventLevel.Fatal => AdaptiveCards.AdaptiveTextColor.Attention,
-            _ => AdaptiveCards.AdaptiveTextColor.Default,
+            LogEventLevel.Information => AdaptiveTextColor.Default,
+            LogEventLevel.Warning => AdaptiveTextColor.Warning,
+            LogEventLevel.Error or LogEventLevel.Fatal => AdaptiveTextColor.Attention,
+            _ => AdaptiveTextColor.Default,
         };
     }
 
@@ -293,75 +293,83 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
     /// <returns>A message.</returns>
     private MicrosoftTeamsMessage CreateMessage(MicrosoftExtendedLogEvent logEvent)
     {
-        var renderedMessage = this.GetRenderedMessage(logEvent);
-
         var message = new MicrosoftTeamsMessage();
+        
+        var renderedMessage = this.GetRenderedMessage(logEvent);
+        var shortMessage = renderedMessage[..(renderedMessage.Length >= 150 ? 150 : renderedMessage.Length)];
 
-        var additionalProperty = new SerializableDictionary<string, object>
+        var card = new AdaptiveCard(new AdaptiveSchemaVersion(1, 0))
         {
-            {
-                "msteams", new
-                {
-                    width = "Full",
-                }
-            }
-        };
-
-        var card = new AdaptiveCards.AdaptiveCard(new AdaptiveCards.AdaptiveSchemaVersion(1, 0))
-        {
-            Body = new List<AdaptiveCards.AdaptiveElement>
-            {
-                new AdaptiveCards.AdaptiveTextBlock
+            Body =
+            [
+                new AdaptiveTextBlock
                 {
                     Text = this.GetRenderedTitle(logEvent),
-                    Size = AdaptiveCards.AdaptiveTextSize.ExtraLarge,
-                    Weight = AdaptiveCards.AdaptiveTextWeight.Bolder,
-                    Style = AdaptiveCards.AdaptiveTextBlockStyle.Heading
+                    Size = AdaptiveTextSize.ExtraLarge,
+                    Weight = AdaptiveTextWeight.Bolder,
+                    Style = AdaptiveTextBlockStyle.Heading
                 },
-                new AdaptiveCards.AdaptiveTextBlock
+                new AdaptiveTextBlock
                 {
+                    Id = "shortMessage",
+                    Text = shortMessage,
+                    Wrap = true,
+                    Color = GetCardColor(logEvent.LogEvent.Level)
+                },
+                new AdaptiveTextBlock
+                {
+                    Id = "longMessage",
                     Text = this.options.UseCodeTagsForMessage ? $"```{Environment.NewLine}{renderedMessage}{Environment.NewLine}```" : renderedMessage,
                     Wrap = true,
                     Color = GetCardColor(logEvent.LogEvent.Level)
                 }
-            },
-            Actions = new List<AdaptiveCards.AdaptiveAction>(),
-            AdditionalProperties = additionalProperty
+            ],
+            Actions = [],
+            AdditionalProperties = new SerializableDictionary<string, object>()
+            {
+                {"msteams", new { width = "Full" }}
+            }
         };
-
+        
+        card.Actions.Add(new AdaptiveToggleVisibilityAction
+        {
+            Title = "Toggle",
+            TargetElements = ["longMessage", "Facts"]
+        });
+    
         message.Attachments.Add(new MicrosoftTeamsAttachment()
         {
             Content = card
         });
-
+    
         if (!this.options.OmitPropertiesSection)
         {
             var microsoftTeamsMessageFacts = this.GetFacts(logEvent);
-
+    
             if (this.options.PropertiesSection.Any())
             {
                 microsoftTeamsMessageFacts = microsoftTeamsMessageFacts.Where(fact => this.options.PropertiesSection.Contains(fact.Name)).ToList();
             }
             
-            card.Body.Add(new AdaptiveCards.AdaptiveFactSet
+            card.Body.Add(new AdaptiveFactSet
             {
-                Facts = microsoftTeamsMessageFacts.Select(f => new AdaptiveCards.AdaptiveFact(f.Name, f.Value)).ToList()
+                Id = "Facts",
+                Facts = microsoftTeamsMessageFacts.Select(f => new AdaptiveFact(f.Name, f.Value)).ToList()
             });
         }
-
+    
         // Add static URL buttons from the options
         if (this.options.Buttons.IsNullOrEmpty())
         {
             return message;
         }
-
-        card.Actions = new List<AdaptiveCards.AdaptiveAction>();
-        this.options.Buttons!.ToList().ForEach(btn => card.Actions.Add(new AdaptiveCards.AdaptiveOpenUrlAction
+    
+        this.options.Buttons!.ToList().ForEach(btn => card.Actions.Add(new AdaptiveOpenUrlAction
         {
             Title = btn.Name,
             Url = new Uri(btn.Uri)
         }));
-
+    
         return message;
     }
 
