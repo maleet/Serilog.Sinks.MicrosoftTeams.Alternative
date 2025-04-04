@@ -298,7 +298,7 @@ public class MicrosoftTeamsSink : IBatchedLogEventSink
         var renderedMessage = this.GetRenderedMessage(logEvent);
         var shortMessage = renderedMessage[..(renderedMessage.Length >= 200 ? 200 : renderedMessage.Length)];
 
-        var card = new AdaptiveCard(new AdaptiveSchemaVersion(1, 0))
+        var card = new AdaptiveCard(new AdaptiveSchemaVersion(1, 5))
         {
             Body =
             [
